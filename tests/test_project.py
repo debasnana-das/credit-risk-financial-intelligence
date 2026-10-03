@@ -74,3 +74,22 @@ def test_credit_api_scores_demo_row():
     payload = response.json()
     assert payload["predicted_tier"] in meta["classes"]
     assert set(payload["probabilities"]) == set(meta["classes"])
+
+
+def test_credit_api_allows_missing_feature_values():
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from fastapi.testclient import TestClient
+    from api.main import app
+    meta = json.loads((ROOT / "artifacts" / "credit_metadata.json").read_text())
+    demo = pd.read_csv(ROOT / "data" / "sample" / "credit_applicants_demo.csv").head(1)
+    row = demo.iloc[0].copy()
+    feature_values = {
+        c: None if c == meta["feature_columns"][0] or pd.isna(row[c])
+        else (row[c].item() if hasattr(row[c], "item") else row[c])
+        for c in meta["feature_columns"]
+    }
+    client = TestClient(app)
+    response = client.post("/credit/score", json={"features": feature_values})
+    assert response.status_code == 200
+    assert response.json()["predicted_tier"] in meta["classes"]
