@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
@@ -17,7 +17,10 @@ eps_meta = json.loads((ART / "eps_metadata.json").read_text())
 app = FastAPI(title="Banking Risk & Financial Intelligence API", version="1.0.0")
 
 class CreditRequest(BaseModel):
-    features: Dict[str, Union[str, float, int]] = Field(..., description="Credit model feature dictionary")
+    # Missing predictor values are allowed because the trained pipeline imputes them.
+    features: Dict[str, Optional[Union[str, float, int]]] = Field(
+        ..., description="Credit model feature dictionary; null is allowed for missing values"
+    )
 
 class EPSRequest(BaseModel):
     features: Dict[str, float]
@@ -53,7 +56,6 @@ def eps_forecast(req: EPSRequest):
     forecast = float(eps_model.predict(X)[0])
     growth = ((forecast / req.current_eps) - 1) * 100 if abs(req.current_eps) > 1e-9 else None
     return {"forecast_eps": forecast, "current_eps": req.current_eps, "forecast_growth_pct": growth, "model": eps_meta["selected_model"]}
-
 
 @app.post("/combined/context")
 def combined_context(req: CombinedRequest):
