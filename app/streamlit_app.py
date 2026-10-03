@@ -72,14 +72,17 @@ with tab1:
         pred = credit_model.predict(row)[0]
         probs = credit_model.predict_proba(row)[0]
         classes = credit_meta["classes"]
+        predicted_tier = str(classes[pred])
+        st.session_state["last_credit_tier"] = predicted_tier
+
         c1, c2, c3 = st.columns(3)
-        c1.metric("Predicted tier", str(classes[pred]))
-        c2.metric("Tier attention", {"P1":"Lower", "P2":"Standard", "P3":"Higher", "P4":"Highest"}.get(classes[pred], "Unknown"))
+        c1.metric("Predicted tier", predicted_tier)
+        c2.metric("Tier attention", {"P1":"Lower", "P2":"Standard", "P3":"Higher", "P4":"Highest"}.get(predicted_tier, "Unknown"))
         c3.metric("Highest class probability", f"{probs.max()*100:.1f}%")
         prob_df = pd.DataFrame({"Tier": classes, "Probability": probs}).sort_values("Probability", ascending=False)
         st.bar_chart(prob_df.set_index("Tier"))
         st.dataframe(prob_df.style.format({"Probability": "{:.1%}"}), use_container_width=True)
-        if classes[pred] in {"P3", "P4"}:
+        if predicted_tier in {"P3", "P4"}:
             st.warning("Higher-attention tier. Treat the output as a screening signal and apply the institution's documented lending policy and human review.")
         else:
             st.success("Standard/lower-attention tier signal. The model is not a substitute for the institution's lending policy.")
@@ -103,14 +106,17 @@ with tab2:
     if st.button("Forecast next-year EPS", type="primary"):
         X = pd.DataFrame([{**values, "Current EPS (Rs.)": float(current_eps_input)}])
         forecast = float(eps_model.predict(X)[0])
-        curr = float(current["Basic EPS (Rs.)"])
+
+        # Use the exact user-entered Current EPS for both growth and the carry-forward baseline.
+        curr = float(current_eps_input)
         baseline = curr
         growth = ((forecast / curr) - 1) * 100 if abs(curr) > 1e-9 else None
+
         a, b, c = st.columns(3)
         a.metric("Current EPS", f"₹{curr:.2f}")
         b.metric("ML forecast", f"₹{forecast:.2f}")
         c.metric("Forecast growth", "N/A" if growth is None else f"{growth:+.1f}%")
-        st.info(f"Benchmark baseline: carrying forward current EPS would be ₹{baseline:.2f}. This baseline is included because the validation study found it stronger than the ML forecast on the untouched 2023 holdout.")
+        st.info(f"Benchmark baseline: carrying forward the entered current EPS would be ₹{baseline:.2f}. This baseline is included because the validation study found it stronger than the ML forecast on the untouched 2023 holdout.")
         if growth is not None and growth < -5:
             st.warning("Negative forecast scenario. Use this as a sensitivity signal, not a standalone investment or credit conclusion.")
         elif growth is not None and growth > 5:
@@ -123,7 +129,7 @@ with tab3:
     st.write("This layer connects the two models without pretending that bank-level EPS directly determines an individual customer's credit risk.")
     default_tier = st.session_state.get("last_credit_tier", "P2")
     tier_index = credit_meta["classes"].index(default_tier) if default_tier in credit_meta["classes"] else 1
-    credit_tier = st.selectbox("Customer tier", credit_meta["classes"], index=tier_index)
+    credit_tier = st.selectbox("Customer tier", credit_meta["classes"], index=tier_index, key="combined_credit_tier")
     bank = st.selectbox("Institution", banks, key="combined_bank")
     current = reference.loc[reference["Bank name"] == bank].iloc[0]
     X = pd.DataFrame([{**{f: float(current[f]) for f in financial_features}, "Current EPS (Rs.)": float(current["Basic EPS (Rs.)"])}])
