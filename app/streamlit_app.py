@@ -65,7 +65,11 @@ with tab1:
                 st.error(f"Missing required columns ({len(missing)}): {missing}")
                 row = None
             else:
-                row = row[credit_meta["feature_columns"]]
+                if len(row) != 1:
+                    st.warning("Please upload a CSV containing exactly one applicant row. Batch scoring is not enabled in this dashboard.")
+                    row = None
+                else:
+                    row = row[credit_meta["feature_columns"]]
 
     if row is not None and st.button("Assess credit tier", type="primary"):
         row = row.replace(-99999, pd.NA)
