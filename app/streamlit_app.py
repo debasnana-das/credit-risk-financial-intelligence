@@ -104,8 +104,13 @@ with tab2:
     for i, feature in enumerate(financial_features):
         with grid[i % 2]:
             default = float(current[feature])
-            values[feature] = st.number_input(feature, value=default, format="%.4f", key=f"eps_{feature}")
-    current_eps_input = st.number_input("Current EPS (Rs.)", value=float(current["Basic EPS (Rs.)"]), format="%.4f", key="eps_current")
+            values[feature] = st.number_input(feature, value=default, format="%.4f", key=f"eps_{bank}_{feature}")
+    current_eps_input = st.number_input(
+        "Current EPS (Rs.)",
+        value=float(current["Basic EPS (Rs.)"]),
+        format="%.4f",
+        key=f"eps_{bank}_current",
+    )
 
     if st.button("Forecast next-year EPS", type="primary"):
         X = pd.DataFrame([{**values, "Current EPS (Rs.)": float(current_eps_input)}])
@@ -133,7 +138,12 @@ with tab3:
     st.write("This layer connects the two models without pretending that bank-level EPS directly determines an individual customer's credit risk.")
     default_tier = st.session_state.get("last_credit_tier", "P2")
     tier_index = credit_meta["classes"].index(default_tier) if default_tier in credit_meta["classes"] else 1
-    credit_tier = st.selectbox("Customer tier", credit_meta["classes"], index=tier_index, key="combined_credit_tier")
+    credit_tier = st.selectbox(
+        "Customer tier",
+        credit_meta["classes"],
+        index=tier_index,
+        key=f"combined_credit_tier_{default_tier}",
+    )
     bank = st.selectbox("Institution", banks, key="combined_bank")
     current = reference.loc[reference["Bank name"] == bank].iloc[0]
     X = pd.DataFrame([{**{f: float(current[f]) for f in financial_features}, "Current EPS (Rs.)": float(current["Basic EPS (Rs.)"])}])
