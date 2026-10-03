@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+.DS_Store
+.ipynb_checkpoints/
+
+# Local/source datasets
+.data_local/
+data/raw/*.xlsx
+data/processed/*.csv
+data/processed/*.parquet
+.local_source/
+
+# Logs / temporary files
+*.log
+*.tmp
+
+# Optional deployment secrets
+.streamlit/secrets.toml

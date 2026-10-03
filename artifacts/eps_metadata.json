@@ -1,0 +1,29 @@
+{
+  "features": [
+    "ROCE (%)",
+    "CASA (%)",
+    "Net Profit Margin (%)",
+    "Operating Profit Margin (%)",
+    "Return on Assets (%)",
+    "Return on Equity / Networth (%)",
+    "Net Interest Margin (X)",
+    "Cost to Income (%)",
+    "Interest Income/Total Assets (%)",
+    "Non-Interest Income/Total Assets (%)",
+    "Operating Profit/Total Assets (%)",
+    "Operating Expenses/Total Assets (%)",
+    "Interest Expenses/Total Assets (%)",
+    "Face_value",
+    "Current EPS (Rs.)"
+  ],
+  "selected_model": "random_forest",
+  "historical_years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "final_holdout_target_year": 2023,
+  "forecast_horizon": "one year"
+}
